@@ -15,7 +15,7 @@ st.markdown("**Computational Evolution Case Study**")
 # =========================
 # Load Dataset
 # =========================
-st.subheader("Traffic Dataset")
+st.subheader("📂 Traffic Dataset")
 
 data = pd.read_csv("traffic_dataset.csv")
 
@@ -43,7 +43,7 @@ feature_names = list(data.drop(columns=["waiting_time"]).columns)
 # =========================
 # Sidebar Parameters
 # =========================
-st.sidebar.header("Genetic Programming Parameters")
+st.sidebar.header("⚙️ GP Parameters")
 
 population_size = st.sidebar.slider("Population Size", 20, 100, 50)
 generations = st.sidebar.slider("Generations", 5, 100, 20)
@@ -113,22 +113,60 @@ if st.button("Run Genetic Programming (GP)"):
 
     coef, feature, bias = best_expr
     feature_name = feature_names[feature]
+    y_pred = predict(best_expr, X)
 
     st.success(" Optimization Completed")
 
-    st.markdown("### Best Interpretable Mathematical Model")
+    # =========================
+    # Best Model
+    # =========================
+    st.markdown("###  Best Interpretable Mathematical Model")
     st.code(
         f"waiting_time = {coef:.3f} × {feature_name} + {bias:.3f}"
     )
 
-    st.write(f"📉 Best Fitness (MSE): {best_fitness:.4f}")
-    st.write(f"⏱ Execution Time: {exec_time:.4f} seconds")
+    st.write(f"📉 **Best Fitness (MSE):** {best_fitness:.4f}")
+    st.write(f"⏱ **Execution Time:** {exec_time:.4f} seconds")
 
+    # =========================
+    # Convergence Graph
+    # =========================
+    st.subheader("📈 Convergence Behaviour")
+    st.line_chart(
+        pd.DataFrame(
+            {"Best Fitness (MSE)": fitness_history}
+        )
+    )
+
+    # =========================
+    # Actual vs Predicted
+    # =========================
+    st.subheader("📊 Actual vs Predicted Waiting Time")
+    st.scatter_chart(
+        pd.DataFrame({
+            "Actual Waiting Time": y,
+            "Predicted Waiting Time": y_pred
+        })
+    )
+
+    # =========================
+    # Performance Analysis
+    # =========================
+    st.subheader("Performance Analysis")
+    st.markdown(
+        "- **Convergence Rate:** Rapid fitness improvement during early generations\n"
+        "- **Accuracy:** GP-generated equation predicts waiting time effectively\n"
+        "- **Interpretability:** Simple linear expression is human-readable\n"
+        "- **Efficiency:** Low computation time due to symbolic regression"
+    )
+
+    # =========================
+    # Conclusion
+    # =========================
     st.subheader("Conclusion")
     st.markdown(
         "This Streamlit-based Genetic Programming system demonstrates how evolutionary computation "
         "can automatically generate an interpretable mathematical model for predicting traffic "
-        "waiting time using traffic-related attributes."
+        "waiting time using traffic dataset attributes."
     )
-
 
