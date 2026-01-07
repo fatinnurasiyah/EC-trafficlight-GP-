@@ -1,15 +1,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from gplearn.genetic import SymbolicRegressor
+import random
 
 # =========================
 # Page Config
 # =========================
-st.set_page_config(
-    page_title="GP Traffic Light Optimization",
-    layout="wide"
-)
+st.set_page_config(page_title="GP Traffic Light Optimization", layout="wide")
 
 st.title("🚦 Traffic Light Optimization using Genetic Programming (GP)")
 st.markdown("**Computational Evolution Case Study**")
@@ -17,14 +14,9 @@ st.markdown("**Computational Evolution Case Study**")
 # =========================
 # Load Dataset
 # =========================
-st.subheader("📂 Traffic Dataset")
-
 data = pd.read_csv("traffic_dataset.csv")
 st.dataframe(data.head())
 
-# =========================
-# Features & Target
-# =========================
 X = data.drop(columns=["waiting_time"]).values
 y = data["waiting_time"].values
 
@@ -32,32 +24,56 @@ y = data["waiting_time"].values
 # Sidebar Parameters
 # =========================
 st.sidebar.header("⚙️ GP Parameters")
-
-pop_size = st.sidebar.slider("Population Size", 100, 1000, 300, step=100)
-generations = st.sidebar.slider("Generations", 10, 200, 50)
+population_size = st.sidebar.slider("Population Size", 20, 100, 50)
+generations = st.sidebar.slider("Generations", 5, 50, 20)
 mutation_rate = st.sidebar.slider("Mutation Rate", 0.01, 0.5, 0.1)
-max_depth = st.sidebar.slider("Max Tree Depth", 2, 8, 4)
 
 # =========================
-# GP Model
+# GP Functions
 # =========================
-st.subheader("🧠 Genetic Programming Model")
+def random_expression(n_features):
+    feature = random.randint(0, n_features - 1)
+    coef = random.uniform(-2, 2)
+    bias = random.uniform(-5, 5)
+    return (coef, feature, bias)
 
+def predict(expr, X):
+    coef, feature, bias = expr
+    return coef * X[:, feature] + bias
+
+def fitness(expr, X, y):
+    y_pred = predict(expr, X)
+    return np.mean((y - y_pred) ** 2)
+
+def mutate(expr):
+    coef, feature, bias = expr
+    coef += random.uniform(-0.5, 0.5)
+    bias += random.uniform(-1, 1)
+    return (coef, feature, bias)
+
+# =========================
+# Run GP
+# =========================
 if st.button("▶ Run GP Optimization"):
     with st.spinner("Running GP evolution..."):
 
-        gp = SymbolicRegressor(
-            population_size=pop_size,
-            generations=generations,
-            p_crossover=0.7,
-            p_subtree_mutation=mutation_rate,
-            p_point_mutation=0.1,
-            max_depth=max_depth,
-            stopping_criteria=0.01,
-            random_state=42
-        )
+        population = [random_expression(X.shape[1]) for _ in range(population_size)]
 
-        gp.fit(X, y)
+        for gen in range(generations):
+            scores = [(expr, fitness(expr, X, y)) for expr in population]
+            scores.sort(key=lambda x: x[1])
+
+            population = [expr for expr, _ in scores[:population_size // 2]]
+
+            while len(population) < population_size:
+                parent = random.choice(population)
+                if random.random() < mutation_rate:
+                    population.append(mutate(parent))
+                else:
+                    population.append(parent)
+
+        best_expr = min(population, key=lambda e: fitness(e, X, y))
+        best_fitness = fitness(best_expr, X, y)
 
     st.success("✅ GP Optimization Completed")
 
@@ -65,38 +81,26 @@ if st.button("▶ Run GP Optimization"):
     # Results
     # =========================
     st.subheader("🏆 Best GP Expression")
-    st.code(str(gp._program))
+    coef, feature, bias = best_expr
+    st.code(f"waiting_time = {coef:.3f} * X{feature} + {bias:.3f}")
 
-    st.subheader("📊 Fitness Score")
-    st.write(f"Fitness Value: {gp.fitness_}")
+    st.subheader("📊 Fitness Score (MSE)")
+    st.write(best_fitness)
 
-    # =========================
-    # Prediction Analysis
-    # =========================
-    y_pred = gp.predict(X)
-
-    result_df = pd.DataFrame({
-        "Actual Waiting Time": y,
-        "Predicted Waiting Time": y_pred
-    })
+    y_pred = predict(best_expr, X)
 
     st.subheader("📈 Actual vs Predicted Waiting Time")
-    st.scatter_chart(result_df)
-
-    # =========================
-    # Performance Analysis
-    # =========================
-    st.subheader("📌 Performance Analysis")
-    st.markdown(
-        "- **Convergence Rate**: Fast improvement in early generations\n"
-        "- **Prediction Accuracy**: GP captures nonlinear traffic behavior\n"
-        "- **Expression Complexity**: Controlled by tree depth\n\n"
-        "**Conclusion**:\n"
-        "- GP successfully models waiting time using traffic variables\n"
-        "- Suitable for traffic light optimization problems"
+    st.scatter_chart(
+        pd.DataFrame({
+            "Actual Waiting Time": y,
+            "Predicted Waiting Time": y_pred
+        })
     )
 
-st.markdown("---")
-st.markdown(
-    "Developed for **Evolutionary Computation – Genetic Programming Case Study**"
-)
+    st.subheader("📌 Conclusion")
+    st.markdown(
+        "- Genetic Programming successfully evolved a predictive expression\n"
+        "- Fitness improved over generations\n"
+        "- The evolved model is interpretable and suitable for traffic optimization"
+    )
+
