@@ -126,24 +126,21 @@ if st.button("Run Genetic Programming (GP)"):
     st.write(f"📉 **Best Fitness (MSE):** {best_fitness:.4f}")
     st.write(f"⏱ **Execution Time:** {exec_time:.4f} seconds")
 
-    # =========================
-    # Convergence Graph
-    # =========================
-    st.subheader("📊 GP Performance Visualization")
+# =========================
+# GP Performance Visualization
+# =========================
+st.subheader("📊 GP Performance Visualization")
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("**📈 Convergence Behaviour**")
-    st.line_chart(
-        pd.DataFrame({"Best Fitness (MSE)": fitness_history}),
-        height=300
-    # =========================
-    # Prediction & Residual Analysis
-    # =========================
-    y_pred = predict(best_expr, X)
+    convergence_df = pd.DataFrame({
+        "Best Fitness (MSE)": fitness_history
+    })
+    st.line_chart(convergence_df, height=300)
 
-   with col2:
+with col2:
     st.markdown("**📊 Residual Analysis**")
     residuals = y - y_pred
     residual_df = pd.DataFrame({
@@ -151,6 +148,7 @@ with col1:
         "Residual Error": residuals
     })
     st.scatter_chart(residual_df, height=300)
+
 
     # =========================
     # Performance Analysis
