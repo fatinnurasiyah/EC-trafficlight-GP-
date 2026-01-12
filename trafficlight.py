@@ -14,7 +14,7 @@ st.markdown("JIE 42903 - Evolutionary Computing (Lab Report and Project)")
 # =========================
 # 1. Load Dataset
 # =========================
-data = pd.read_csv("/mnt/data/traffic_dataset.csv")
+data = pd.read_csv("traffic_dataset.csv")
 
 # Encode time_of_day: morning=1, afternoon=2, evening=3, night=4
 if 'time_of_day' in data.columns:
