@@ -19,7 +19,6 @@ st.subheader("Traffic Dataset")
 
 data = pd.read_csv("traffic_dataset.csv")
 
-# Encode categorical column
 if data["time_of_day"].dtype == object:
     data["time_of_day"] = data["time_of_day"].map({
         "morning": 1,
@@ -34,9 +33,8 @@ st.dataframe(data.head())
 # =========================
 # Feature & Target
 # =========================
-X = data.drop(columns=["waiting_time"]).astype(float).values
-y = data["waiting_time"].astype(float).values
-feature_names = list(data.drop(columns=["waiting_time"]).columns)
+X = data.drop(columns=["vehicle_count"]).astype(float).values
+y = data["vehicle_count"].astype(float).values
 
 # =========================
 # Sidebar Parameters
@@ -147,7 +145,7 @@ if st.button("Run Genetic Programming (GP)"):
     feature_name = feature_names[feature]
 
     st.subheader("Best Interpretable Mathematical Model")
-    st.code(f"waiting_time = {coef:.3f} × {feature_name} + {bias:.3f}")
+    st.code(f"vehicle_count = {coef:.3f} × {feature_name} + {bias:.3f}")
 
     st.write(f"📉 **Best Fitness (MSE):** {best_fitness:.4f}")
     st.write(f"⏱ **Execution Time:** {exec_time:.4f} seconds")
@@ -168,8 +166,8 @@ if st.button("Run Genetic Programming (GP)"):
         st.markdown("Actual vs Predicted")
         st.scatter_chart(
             pd.DataFrame({
-                "Actual Waiting Time": y,
-                "Predicted Waiting Time": y_pred
+                "Actual vehicle count": y,
+                "Predicted vehicle count": y_pred
             }),
             height=280
         )
