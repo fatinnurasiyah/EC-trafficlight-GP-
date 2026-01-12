@@ -63,7 +63,7 @@ else:
 # =========================
 # GP Helper Functions
 # =========================
-def random_expression():
+def random_expression(feature_names):
     feature = random.randint(0, len(feature_names) - 1)
     coef = random.uniform(-coef_range, coef_range)
     bias = random.uniform(-bias_range, bias_range)
@@ -99,7 +99,7 @@ if st.button("Run Genetic Programming (GP)"):
     start_time = time.time()
 
     with st.spinner("Running GP evolution..."):
-        population = [random_expression() for _ in range(population_size)]
+        population = [random_expression(feature_names) for _ in range(population_size)]
         fitness_history = []
 
         for gen in range(generations):
