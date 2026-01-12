@@ -9,7 +9,7 @@ import time
 # =========================
 st.set_page_config(page_title="Traffic Optimization with GP", layout="wide")
 st.title("🚦 Traffic Light Optimization using Genetic Programming (GP)")
-st.markdown("Predict vehicle count and optimize traffic flow using GP.")
+st.markdown("Predict vehicle count and optimize traffic flow using GP with linear models.")
 
 # =========================
 # Upload Dataset
@@ -20,7 +20,7 @@ uploaded_file = st.file_uploader("Choose CSV file", type="csv")
 if uploaded_file is not None:
     data = pd.read_csv(uploaded_file)
 
-    # Encode time_of_day: morning=1, afternoon=2, evening=3, night=4
+    # Encode time_of_day
     if 'time_of_day' in data.columns:
         data['time_of_day'] = data['time_of_day'].map({
             'morning': 1,
@@ -54,18 +54,30 @@ if uploaded_file is not None:
     def random_feature():
         return random.randint(0, len(feature_names)-1)
 
-    def fitness(feature_idx, X, y):
-        y_pred = X[:, feature_idx]  # predict using only the feature value
-        mse = np.mean((y - y_pred)**2)
+    def random_a_b():
+        a = random.uniform(-5, 5)
+        b = random.uniform(-50, 50)
+        return a, b
+
+    def fitness(individual, X, y):
+        feature_idx, a, b = individual
+        y_pred = a * X[:, feature_idx] + b
+        mse = np.mean((y - y_pred) ** 2)
         if optimization_mode == "Single Objective":
             return mse
         else:
-            return mse + complexity_weight
-
-    def mutate(feature_idx):
+            # penalize complexity (larger coefficients)
+            return mse + complexity_weight * abs(a)
+    
+    def mutate(individual):
+        feature_idx, a, b = individual
         if random.random() < mutation_rate:
-            return random_feature()
-        return feature_idx
+            feature_idx = random_feature()
+        if random.random() < mutation_rate:
+            a += random.uniform(-0.5, 0.5)
+        if random.random() < mutation_rate:
+            b += random.uniform(-5, 5)
+        return [feature_idx, a, b]
 
     # =========================
     # Run GP
@@ -75,28 +87,29 @@ if uploaded_file is not None:
     if st.button("Run GP"):
         start_time = time.time()
 
-        # Initialize population
-        population = [random_feature() for _ in range(population_size)]
+        # Initialize population: [feature_idx, a, b]
+        population = [[random_feature(), *random_a_b()] for _ in range(population_size)]
         fitness_history = []
 
         for gen in range(generations):
-            scored = [(f, fitness(f, X, y)) for f in population]
+            scored = [(ind, fitness(ind, X, y)) for ind in population]
             scored.sort(key=lambda x: x[1])
             fitness_history.append(scored[0][1])
 
             # Selection: top 50%
-            population = [f for f, _ in scored[:population_size//2]]
+            population = [ind for ind, _ in scored[:population_size // 2]]
 
             # Reproduction & mutation
             while len(population) < population_size:
                 parent = random.choice(population)
                 population.append(mutate(parent))
 
-        # Best feature
-        best_feature_idx = min(population, key=lambda f: fitness(f, X, y))
-        best_feature_name = feature_names[best_feature_idx]
-        best_fitness = fitness(best_feature_idx, X, y)
-        y_pred = X[:, best_feature_idx]
+        # Best individual
+        best_individual = min(population, key=lambda ind: fitness(ind, X, y))
+        feature_idx, a, b = best_individual
+        best_feature_name = feature_names[feature_idx]
+        best_fitness = fitness(best_individual, X, y)
+        y_pred = a * X[:, feature_idx] + b
         exec_time = time.time() - start_time
 
         # =========================
@@ -107,7 +120,8 @@ if uploaded_file is not None:
         st.metric("Best Fitness (MSE)", f"{best_fitness:.4f}")
 
         st.subheader("Best Feature for Vehicle Count Prediction")
-        st.markdown(f"**{best_feature_name}** is the most influential feature for predicting vehicle count.")
+        st.markdown(f"**{best_feature_name}** is the most influential feature.")
+        st.markdown(f"Mathematical Model: `vehicle_count = {a:.2f} × {best_feature_name} + {b:.2f}`")
 
         # =========================
         # Visualizations
@@ -123,10 +137,11 @@ if uploaded_file is not None:
         # Conclusion
         st.subheader("Conclusion")
         st.markdown("""
-        This GP model identifies the most influential traffic feature affecting vehicle count. 
-        It predicts vehicle counts to help optimize traffic lights while keeping the model simple and interpretable.
+        This GP model identifies the most influential traffic feature affecting vehicle count 
+        and generates a simple linear model: vehicle_count = a * feature + b.
         Multi-objective optimization balances accuracy and simplicity.
         """)
 else:
     st.info("Please upload a CSV file to start GP optimization.")
+
 
