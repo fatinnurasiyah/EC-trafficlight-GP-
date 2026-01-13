@@ -9,7 +9,7 @@ import time
 # =========================
 st.set_page_config(page_title="Traffic Optimization with GP", layout="wide")
 st.title("🚦 Traffic Light Optimization using Genetic Programming (GP)")
-st.markdown("Predict vehicle count and optimize traffic flow using GP with linear models.")
+st.markdown("JIE 42903 - Evolitionary Computing")
 
 # =========================
 # Upload Dataset
@@ -29,14 +29,14 @@ if uploaded_file is not None:
             'night': 4
         })
 
-    st.subheader("Traffic Dataset Preview")
+    st.subheader("Traffic Dataset ")
     st.dataframe(data.head())
 
     # -------------------------
     # Select Target Variable
     # -------------------------
     numeric_cols = data.select_dtypes(include=np.number).columns.tolist()
-    target_column = st.selectbox("Select target variable (numerical)", numeric_cols)
+    target_column = st.selectbox("Select target variable", numeric_cols)
     st.markdown(f"**Selected target:** `{target_column}`")
 
     # Features & target
@@ -90,7 +90,7 @@ if uploaded_file is not None:
     # =========================
     st.subheader("Genetic Programming Optimization")
 
-    if st.button("Run GP"):
+    if st.button("Run"):
         start_time = time.time()
 
         # Initialize population: [feature_idx, a, b]
@@ -121,7 +121,7 @@ if uploaded_file is not None:
         # =========================
         # Results
         # =========================
-        st.success("GP Optimization Completed")
+        st.success("Optimization Completed")
         st.metric("Execution Time (s)", f"{exec_time:.4f}")
         st.metric("Best Fitness (MSE)", f"{best_fitness:.4f}")
 
